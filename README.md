@@ -17,27 +17,42 @@ Add the ServiceProvider to `config/app.php`:
 
 Now you need to override the routes shipped by the plugin, to secure them with a middleware of your choice.
 
-Here's an example to secure the endpoints with the `auth` middleware:
+Here's an example to secure the endpoints with the `auth` middleware (`app/Providers/RouteServiceProvider`):
 
 ```php
-use CedricZiel\Webartisan\Http\Controllers\WebartisanController;
+    /**
+     * Define the routes for the application.
+     *
+     * @param  \Illuminate\Routing\Router $router
+     *
+     * @return void
+     */
+    public function map(Router $router)
+    {
+        $router->group(['namespace' => $this->namespace], function ($router) {
+            require app_path('Http/routes.php');
+        });
 
-// Application routes ...
+        /**
+         * Webartisan routes
+         */
+        $router->group([
+            'namespace'  => '\CedricZiel\Webartisan\Http\Controllers',
+            'middleware' => ['web', 'auth']
+        ], function ($router) {
+            Route::get('artisan', [
+                'as'         => 'artisan',
+                'middleware' => 'auth',
+                'uses'       => 'WebartisanController@show'
+            ]);
 
-/**
- * Maintenance routes.
- */
-Route::get('artisan', [
-    'as'   => 'artisan',
-    'middleware' => 'auth',
-    'uses' => WebartisanController::class . '@show'
-]);
-
-Route::post('artisan', [
-    'as'   => 'artisan',
-    'middleware' => 'auth',
-    'uses' => WebartisanController::class . '@execute'
-]);
+            Route::post('artisan', [
+                'as'         => 'artisan',
+                'middleware' => 'auth',
+                'uses'       => 'WebartisanController@execute'
+            ]);
+        });
+    }
 ```
 
 ## License & Credits
